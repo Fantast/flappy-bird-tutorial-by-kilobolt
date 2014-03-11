@@ -1,10 +1,9 @@
 package com.dpaulenk.zombie.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
-import com.dpaulenk.zombie.render.GameRenderer;
 import com.dpaulenk.zombie.model.GameWorld;
+import com.dpaulenk.zombie.render.GameRenderer;
 import com.dpaulenk.zombie.utils.InputHandler;
 
 public class GameScreen extends ScreenAdapter {
@@ -14,7 +13,6 @@ public class GameScreen extends ScreenAdapter {
     private float runTime = 0;
 
     public GameScreen() {
-
         float screenWidth = Gdx.graphics.getWidth();
         float screenHeight = Gdx.graphics.getHeight();
         float gameWidth = 136;
@@ -23,9 +21,11 @@ public class GameScreen extends ScreenAdapter {
         int centerY = (int) (gameHeight / 2);
 
         world = new GameWorld(centerY);
-        renderer = new GameRenderer(world, (int) gameHeight, centerY);
 
-        Gdx.input.setInputProcessor(new InputHandler(world.getBird()));
+        Gdx.input.setInputProcessor(new InputHandler(world, screenWidth / gameWidth, screenHeight / gameHeight));
+
+        renderer = new GameRenderer(world, (int) gameHeight, centerY);
+        world.setRenderer(renderer);
     }
 
     @Override
@@ -33,7 +33,7 @@ public class GameScreen extends ScreenAdapter {
         runTime += delta;
 
         world.update(delta);
-        renderer.render(runTime);
+        renderer.render(delta, runTime);
     }
 
     @Override

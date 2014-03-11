@@ -1,9 +1,17 @@
 package com.dpaulenk.zombie.utils;
 
+import com.dpaulenk.zombie.model.Bird;
+import com.dpaulenk.zombie.model.GameWorld;
 import com.dpaulenk.zombie.model.Grass;
 import com.dpaulenk.zombie.model.Pipe;
 
 public class ScrollHandler {
+    // Capital letters are used by convention when naming constants.
+    public static final int SCROLL_SPEED = -59;
+    public static final int PIPE_GAP = 49;
+
+    private final GameWorld gameWorld;
+    private final Bird bird;
 
     // ScrollHandler will create all five objects that we need.
     private final Grass frontGrass;
@@ -12,19 +20,18 @@ public class ScrollHandler {
     private final Pipe pipe2;
     private final Pipe pipe3;
 
-    // Capital letters are used by convention when naming constants.
-    public static final int SCROLL_SPEED = -59;
-    public static final int PIPE_GAP = 49;
-
     // Constructor receives a float that tells us where we need to create our
     // Grass and Pipe objects.
-    public ScrollHandler(float grassPos) {
-        frontGrass = new Grass(0, grassPos, 143, 11, SCROLL_SPEED);
-        backGrass = new Grass(frontGrass.getTailX(), grassPos, 143, 11, SCROLL_SPEED);
+    public ScrollHandler(GameWorld gw, float groundY) {
+        gameWorld = gw;
+        bird = gameWorld.getBird();
 
-        pipe1 = new Pipe(210, 0, 22, 60, SCROLL_SPEED);
-        pipe2 = new Pipe(pipe1.getTailX() + PIPE_GAP, 0, 22, 70, SCROLL_SPEED);
-        pipe3 = new Pipe(pipe2.getTailX() + PIPE_GAP, 0, 22, 60, SCROLL_SPEED);
+        frontGrass = new Grass(0, groundY, 143, 11, SCROLL_SPEED);
+        backGrass = new Grass(frontGrass.getTailX(), groundY, 143, 11, SCROLL_SPEED);
+
+        pipe1 = new Pipe(210, 0, 22, 60, SCROLL_SPEED, groundY);
+        pipe2 = new Pipe(pipe1.getTailX() + PIPE_GAP, 0, 22, 70, SCROLL_SPEED, groundY);
+        pipe3 = new Pipe(pipe2.getTailX() + PIPE_GAP, 0, 22, 60, SCROLL_SPEED, groundY);
     }
 
     public void update(float delta) {
@@ -51,6 +58,60 @@ public class ScrollHandler {
         } else if (backGrass.isScrolledLeft()) {
             backGrass.reset(frontGrass.getTailX());
         }
+
+        if (!pipe1.isScored()
+                && pipe1.getX() + (pipe1.getWidth() / 2) < bird.getX() + bird.getWidth()) {
+            addScore(1);
+            pipe1.setScored(true);
+            AssetLoader.coin.play();
+        } else if (!pipe2.isScored()
+                && pipe2.getX() + (pipe2.getWidth() / 2) < bird.getX() + bird.getWidth()) {
+            addScore(1);
+            pipe2.setScored(true);
+            AssetLoader.coin.play();
+
+        } else if (!pipe3.isScored()
+                && pipe3.getX() + (pipe3.getWidth() / 2) < bird.getX() + bird.getWidth()) {
+            addScore(1);
+            pipe3.setScored(true);
+            AssetLoader.coin.play();
+        }
+    }
+
+    public void updateReady(float delta) {
+        frontGrass.update(delta);
+        backGrass.update(delta);
+
+        // Same with grass
+        if (frontGrass.isScrolledLeft()) {
+            frontGrass.reset(backGrass.getTailX());
+        } else if (backGrass.isScrolledLeft()) {
+            backGrass.reset(frontGrass.getTailX());
+        }
+    }
+
+    public void onRestart() {
+        frontGrass.onRestart(0, SCROLL_SPEED);
+        backGrass.onRestart(frontGrass.getTailX(), SCROLL_SPEED);
+        pipe1.onRestart(210, SCROLL_SPEED);
+        pipe2.onRestart(pipe1.getTailX() + PIPE_GAP, SCROLL_SPEED);
+        pipe3.onRestart(pipe2.getTailX() + PIPE_GAP, SCROLL_SPEED);
+    }
+
+    public boolean collides(Bird bird) {
+        return (pipe1.collides(bird) || pipe2.collides(bird) || pipe3.collides(bird));
+    }
+
+    private void addScore(int increment) {
+        gameWorld.addScore(increment);
+    }
+
+    public void stop() {
+        frontGrass.stop();
+        backGrass.stop();
+        pipe1.stop();
+        pipe2.stop();
+        pipe3.stop();
     }
 
     // The getters for our five instance variables

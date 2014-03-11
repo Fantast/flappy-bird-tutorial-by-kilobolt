@@ -1,8 +1,15 @@
 package com.dpaulenk.zombie.model;
 
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
+import com.dpaulenk.zombie.utils.AssetLoader;
 
 public class Bird {
+
+    private final int originalY;
+
+    private Circle boundingCircle;
+
     private Vector2 position;
     private Vector2 velocity;
     private Vector2 acceleration;
@@ -10,10 +17,16 @@ public class Bird {
     private float rotation; // For handling bird rotation
     private int width;
     private int height;
+    private boolean isAlive;
 
     public Bird(int x, int y, int width, int height) {
+        this.originalY = y;
         this.width = width;
         this.height = height;
+
+        isAlive = true;
+
+        boundingCircle = new Circle();
 
         position = new Vector2(x, y);
         velocity = new Vector2(0, 0);
@@ -27,7 +40,15 @@ public class Bird {
             velocity.y = 200;
         }
 
+        // CEILING CHECK
+        if (position.y < -13) {
+            position.y = -13;
+            velocity.y = 0;
+        }
+
         position.add(velocity.cpy().scl(delta));
+
+        boundingCircle.set(position.x + 9, position.y + 6, 6.5f);
 
         // Rotate counterclockwise
         if (velocity.y < 0) {
@@ -39,7 +60,7 @@ public class Bird {
         }
 
         // Rotate clockwise
-        if (isFalling()) {
+        if (isFalling() || !isAlive) {
             rotation += 480 * delta;
             if (rotation > 90) {
                 rotation = 90;
@@ -47,8 +68,34 @@ public class Bird {
         }
     }
 
+    public void updateReady(float runTime) {
+        position.y = 2 * (float) Math.sin(7 * runTime) + originalY;
+    }
+
+    public void onRestart(int centerY) {
+        rotation = 0;
+        position.y = centerY;
+        velocity.x = 0;
+        velocity.y = 0;
+        acceleration.x = 0;
+        acceleration.y = 460;
+        isAlive = true;
+    }
+
     public void onClick() {
-        velocity.y = -140;
+        if (isAlive) {
+            AssetLoader.flap.play();
+            velocity.y = -140;
+        }
+    }
+
+    public void die() {
+        isAlive = false;
+        velocity.y = 0;
+    }
+
+    public void deccelerate() {
+        acceleration.y = 0;
     }
 
     public boolean isFalling() {
@@ -56,7 +103,15 @@ public class Bird {
     }
 
     public boolean shouldntFlap() {
-        return velocity.y > 70;
+        return velocity.y > 70 || !isAlive;
+    }
+
+    public Circle getBoundingCircle() {
+        return boundingCircle;
+    }
+
+    public boolean isAlive() {
+        return isAlive;
     }
 
     public float getX() {
